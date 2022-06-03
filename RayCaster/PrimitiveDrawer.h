@@ -13,6 +13,18 @@ public:
 private:
 	int width, height;
 
+#pragma region RECTANGLE
+public:
+	void fillRect(float px, float py, float rect_width, float rect_height, const glm::vec3& color, ShaderProgram& shaderProgram);
+	void fillRect(float px, float py, float rect_width, float rect_height, ShaderProgram& shaderProgram);
+
+	glm::vec3 rectColor;
+
+private:
+	unsigned int vboRect, vaoRect, eboRect;
+	void initRectBuffer();
+#pragma endregion
+
 #pragma region POINT
 public:
 	void drawPoint(float px, float py, const glm::vec3& color, float pointSize, ShaderProgram& shaderProgram);

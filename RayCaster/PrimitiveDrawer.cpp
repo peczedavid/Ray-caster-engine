@@ -1,19 +1,74 @@
 #include "PrimitiveDrawer.h"
 
 PrimitiveDrawer::PrimitiveDrawer() {
+	glm::vec3 defaultColor = glm::vec3(1, 0, 1);
 	this->initLineBuffer();
 	this->lineWidth = 5.f;
-	this->lineColor = glm::vec3(1, 0, 1);
+	this->lineColor = defaultColor;
 
 	this->initPointBuffer();
 	this->pointSize = 7.5f;
-	this->pointColor = glm::vec3(1, 0, 1);
+	this->pointColor = defaultColor;
+
+	this->initRectBuffer();
+	this->rectColor = defaultColor;
 }
 
 void PrimitiveDrawer::setSize(int width, int height) {
 	this->width = width;
 	this->height = height;
 }
+
+#pragma region RECTANGLE
+void PrimitiveDrawer::fillRect(float px, float py, float rect_width, float rect_height, const glm::vec3& color, ShaderProgram& shaderProgram) {
+	glBindBuffer(GL_ARRAY_BUFFER, this->vboRect);
+
+	px = (px / this->width) * 2.f - 1.f;
+	py = (1.f - (py / this->height)) * 2 - 1.f;
+	rect_width = rect_width / this->width * 2;
+	rect_height = rect_height / this->height * 2;
+	float positions[8] = {
+		px, py,								// top left
+		px + rect_width, py,				// top right
+		px + rect_width, py - rect_height,	// bottom right
+		px, py - rect_height				// bottom left
+	};
+
+	// Set the endpoints
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 8, &positions, GL_STATIC_DRAW);
+
+	// Set the color
+	shaderProgram.setUniform(color, std::string("color"));
+
+	glBindVertexArray(this->vaoRect);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->eboRect);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+	glBindVertexArray(0);
+}
+void PrimitiveDrawer::fillRect(float px, float py, float rect_width, float rect_height, ShaderProgram& shaderProgram) {
+	this->fillRect(px, py, rect_width, rect_height, this->rectColor, shaderProgram);
+}
+
+void PrimitiveDrawer::initRectBuffer() {
+	glGenBuffers(1, &this->vboRect);
+	glGenVertexArrays(1, &this->vaoRect);
+	glGenBuffers(1, &this->eboRect);
+
+	glBindVertexArray(this->vaoRect);
+	glBindBuffer(GL_ARRAY_BUFFER, this->vboRect);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, 0);
+	glBindVertexArray(0);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->eboRect);
+	unsigned int indices[6] = { 
+		0, 2, 1,
+		0, 3, 2
+	};
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+}
+#pragma endregion
+
 
 #pragma region POINT
 void PrimitiveDrawer::drawPoint(float px, float py, const glm::vec3& color, float pointSize, ShaderProgram& shaderProgram) {

@@ -74,6 +74,8 @@ int main() {
 		drawer.drawLine(400, 300, 400, 0, glm::vec3(0, 1, 0), 5, shaderProgram);
 		drawer.drawPoint(600, 450, shaderProgram);
 
+		drawer.fillRect(200, 150, 200, 150, glm::vec3(0, 0, 1), shaderProgram);
+
 		// events/buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
