@@ -3,6 +3,13 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <iostream>
+#include <string>
+#include "ShaderProgram.h"
+#include "PrimitiveDrawer.h"
+
+int viewport_width = 800;
+int viewport_height = 600;
+float t = 0, dt = 0;
 
 void error_callback(int error, const char* description);
 
@@ -22,7 +29,7 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Ray casting engine", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(viewport_width, viewport_height, "Ray casting engine", NULL, NULL);
 	if (window == NULL) {
 		printf("Failed to create glfw window");
 		glfwTerminate();
@@ -30,6 +37,7 @@ int main() {
 	}
 	printf("Window created\n");
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(0); // vsync off
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -38,10 +46,20 @@ int main() {
 	}
 	printf("Glad loaded\n");
 
+	ShaderProgram shaderProgram = ShaderProgram("vert.glsl", "frag.glsl");
+	PrimitiveDrawer drawer = PrimitiveDrawer();
+
+	float lastFrameTime = 0;
+	float lastTitleUpdate = 0;
 
 	printf("Loop start\n");
 	// render loop
 	while (!glfwWindowShouldClose(window)) {
+		// time
+		t = glfwGetTime();
+		dt = t- lastFrameTime;
+		lastFrameTime = t;
+
 		// input
 		processInput(window);
 
@@ -49,10 +67,25 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		shaderProgram.Use();
+		drawer.setSize(viewport_width, viewport_height);
+		drawer.drawLine(400, 300, 800, 300, glm::vec3(1, 0, 0), 5, shaderProgram);
+		drawer.drawPoint(200, 150, glm::vec3(1, 0.5, 0.2), 10, shaderProgram);
+		drawer.drawLine(400, 300, 400, 0, glm::vec3(0, 1, 0), 5, shaderProgram);
+		drawer.drawPoint(600, 450, shaderProgram);
 
 		// events/buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		// window name
+		if (t - lastTitleUpdate >= 1.f) {
+			std::string title = std::to_string((int)(1 / dt)) + std::string(" fps - ") + std::to_string((int)(dt * 1000.f))
+				+ std::string(" ms");
+			glfwSetWindowTitle(window, title.c_str());
+			lastTitleUpdate = t;
+		}
+		
 	}
 	printf("Loop end\n");
 
@@ -67,7 +100,9 @@ void error_callback(int error, const char* description) {
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
+	viewport_width = width;
+	viewport_height = height;
+	glViewport(0, 0, viewport_width, viewport_height);
 }
 
 void processInput(GLFWwindow* window) {
