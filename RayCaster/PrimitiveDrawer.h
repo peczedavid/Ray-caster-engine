@@ -7,7 +7,7 @@
 class PrimitiveDrawer {
 public:
 	PrimitiveDrawer();
-
+	void init();
 	void setSize(int width, int height);
 
 private:

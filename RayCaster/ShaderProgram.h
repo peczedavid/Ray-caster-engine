@@ -19,7 +19,7 @@ private:
 	GLuint getUniformLocation(const std::string& name);
 public:
 	ShaderProgram(const char* vertexFileName, const char* fragmentFileName, const char* fragmentOutputName = "outColor");
-
+	ShaderProgram();
 	~ShaderProgram();
 
 	GLuint getId();

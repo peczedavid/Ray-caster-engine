@@ -1,6 +1,9 @@
 #include "PrimitiveDrawer.h"
 
 PrimitiveDrawer::PrimitiveDrawer() {
+}
+
+void PrimitiveDrawer::init() {
 	glm::vec3 defaultColor = glm::vec3(1, 0, 1);
 	this->initLineBuffer();
 	this->lineWidth = 5.f;
