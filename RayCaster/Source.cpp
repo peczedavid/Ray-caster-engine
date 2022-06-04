@@ -8,6 +8,7 @@
 #include "PrimitiveDrawer.h"
 #include <math.h>
 constexpr float PI = 3.14159265359f;
+constexpr float DEG = 0.0174532925f;
 
 ShaderProgram shaderProgram;
 PrimitiveDrawer drawer;
@@ -15,6 +16,7 @@ PrimitiveDrawer drawer;
 GLFWwindow* window;
 int viewport_width = 1200;
 int viewport_height = 600;
+constexpr float fov = 60; // degrees
 float t = 0, dt = 0;
 
 float player_speed = 125.f;
@@ -36,14 +38,15 @@ int map[] = {
 };
 
 void error_callback(int error, const char* description);
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 void processInput(GLFWwindow* window);
 
-void drawMap2D();
+float limitAngle(float rad);
 
+void drawMap2D();
 void drawPlayer2D();
+void drawRays2D();
 
 int main() {
 	printf("Program starting\n");
@@ -102,6 +105,7 @@ int main() {
 		drawMap2D();
 
 		// draw player
+		drawRays2D();
 		drawPlayer2D();
 
 		// events/buffers
@@ -142,6 +146,7 @@ void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) player_angle += PI * dt;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) player_angle -= PI * dt;
 
+	player_angle = limitAngle(player_angle);
 	playerPositionDelta.x = cosf(player_angle);
 	playerPositionDelta.y = -sinf(player_angle);
 
@@ -170,3 +175,191 @@ void drawPlayer2D() {
 		playerPosition.y + playerPositionDelta.y * 40.f,
 		glm::vec3(1, 1, 0), 3, shaderProgram);
 }
+
+void drawRays2D() {
+	float rayAngle = player_angle + DEG * fov / 2;
+	rayAngle = limitAngle(rayAngle);
+
+	for (int i = 0; i < fov; i++) {
+		glm::vec2 rayHit{};
+		glm::vec2 rayOffset{};
+		glm::vec2 playerPosModel = playerPosition / tile_size;
+		float maxDepth = 8;
+		float currentDepth = 0;
+		
+		// vertical lines checking
+		if (rayAngle < PI/2 || rayAngle > 3*PI/2) { // looking right
+			rayHit.x = (int)playerPosModel.x + 1;
+			float w = rayHit.x - playerPosModel.x;
+			rayHit.y = playerPosModel.y - tanf(rayAngle) * w;
+			//drawer.drawPoint(rayHit.x * tile_size, rayHit.y * tile_size, shaderProgram);
+			rayOffset.y = -tanf(rayAngle);
+			rayOffset.x = 1;
+			//drawer.drawPoint((rayHit.x + rayOffset.x) * tile_size, (rayHit.y + rayOffset.y) * tile_size,
+			//	glm::vec3(0, 0, 1), 10, shaderProgram);
+		}
+		if (rayAngle > PI/2 && rayAngle < 3*PI/2) { // looking left
+			rayHit.x = (int)playerPosModel.x;
+			float w = playerPosModel.x - rayHit.x;
+			rayHit.y = playerPosModel.y + tanf(rayAngle) * w;
+			//drawer.drawPoint(rayHit.x * tile_size, rayHit.y * tile_size, shaderProgram);
+			rayOffset.y = tanf(rayAngle);
+			rayOffset.x = -1;
+			//drawer.drawPoint((rayHit.x + rayOffset.x) * tile_size, (rayHit.y + rayOffset.y) * tile_size,
+			//	glm::vec3(0, 0, 1), 10, shaderProgram);
+		}
+		if (rayAngle == PI/2 || rayAngle == 3*PI/2) {
+			currentDepth = maxDepth;
+			rayHit = playerPosModel;
+		}
+
+		//printf("x=%3.3f\ty=%3.3f\n", rayHit.x, rayHit.y);
+		//printf("i=%d\tj=%d\n", (int)rayHit.y - 1, (int)rayHit.x);
+
+		while (currentDepth < maxDepth) {
+			//drawer.drawPoint(rayHit.x * tile_size, rayHit.y * tile_size, glm::vec3(1, 0, 0), 10, shaderProgram);
+
+			int i = (int)rayHit.y;
+			int j = (int)rayHit.x - 1;
+			if (rayAngle < PI / 2 || rayAngle > 3 * PI / 2) j += 1;
+			int idx = i * map_width + j;
+			if (i >= 0 && i < map_height &&
+				j >= 0 && j < map_width &&
+				map[idx] == 1) { // hit a wall
+				currentDepth = maxDepth;
+			}
+			else {
+				rayHit += rayOffset;
+				currentDepth += 1;
+			}
+		}
+
+		glm::vec2 verticalHit = rayHit;
+		//drawer.drawLine(playerPosition.x, playerPosition.y, rayHit.x * tile_size, rayHit.y * tile_size, glm::vec3(1, 0, 0), 10, shaderProgram);
+
+		// horizontal lines checking
+		currentDepth = 0;
+		if (rayAngle < PI) { // looking up
+			rayHit.y = (int)playerPosModel.y;
+			float h = (playerPosModel.y - rayHit.y);
+			rayHit.x = playerPosModel.x - (tanf(rayAngle - (PI / 2)) * h);
+			//drawer.drawPoint(rayHit.x * tile_size, rayHit.y * tile_size, shaderProgram);
+			rayOffset.y = -1;
+			rayOffset.x = -tanf(rayAngle - (PI / 2));
+			//drawer.drawPoint((rayHit.x + rayOffset.x) * tile_size, (rayHit.y + rayOffset.y) * tile_size,
+			//	glm::vec3(0, 0, 1), 10, shaderProgram);
+		}
+		if (rayAngle > PI) { // looking down
+			rayHit.y = (int)playerPosModel.y + 1;
+			float h = (rayHit.y - playerPosModel.y);
+			rayHit.x = playerPosModel.x + (tanf(rayAngle - (PI / 2)) * h);
+			//drawer.drawPoint(rayHit.x * tile_size, rayHit.y * tile_size, shaderProgram);
+			rayOffset.y = 1;
+			rayOffset.x = tanf(rayAngle - (PI / 2));
+			//drawer.drawPoint((rayHit.x + rayOffset.x) * tile_size, (rayHit.y + rayOffset.y) * tile_size,
+			//	glm::vec3(0, 0, 1), 10, shaderProgram);
+		}
+		if (rayAngle == 0.f || rayAngle == PI) {
+			currentDepth = maxDepth;
+			rayHit = playerPosModel;
+		}
+
+		//printf("x=%3.3f\ty=%3.3f\n", rayHit.x, rayHit.y);
+		//printf("i=%d\tj=%d\n", (int)rayHit.y - 1, (int)rayHit.x);
+
+		while (currentDepth < maxDepth) {
+			//drawer.drawPoint(rayHit.x * tile_size, rayHit.y * tile_size, glm::vec3(1, 0, 0), 10, shaderProgram);
+
+			int i = (int)rayHit.y -1;
+			if (rayAngle > PI) i += 1;
+			int j = (int)rayHit.x;
+			int idx = i * map_width + j;
+			if (i >= 0 && i < map_height &&
+				j >= 0 && j < map_width &&
+				map[idx] == 1) { // hit a wall
+				currentDepth = maxDepth;
+			}
+			else {
+				rayHit += rayOffset;
+				currentDepth += 1;
+			}
+		}
+
+		glm::vec2 horizontalHit = rayHit;
+		//drawer.drawLine(playerPosition.x, playerPosition.y, rayHit.x * tile_size, rayHit.y * tile_size, glm::vec3(0, 1, 0), 5, shaderProgram);
+
+		float distanceVertical = glm::distance(playerPosModel, verticalHit);
+		float distanceHorizontal = glm::distance(playerPosModel, horizontalHit);
+
+		/*if (distanceVertical < distanceHorizontal) printf("RED\n");
+		else printf("GREEN\n");*/
+
+		float finalDistance = 0;
+
+		if(distanceVertical < distanceHorizontal) {
+			drawer.drawLine(playerPosition.x, playerPosition.y,
+				verticalHit.x * tile_size, verticalHit.y * tile_size, glm::vec3(1, 0, 0), 3, shaderProgram);
+			finalDistance = distanceVertical;
+		}
+		else {
+			drawer.drawLine(playerPosition.x, playerPosition.y,
+				horizontalHit.x* tile_size, horizontalHit.y* tile_size, glm::vec3(1, 0, 0), 3, shaderProgram);
+			finalDistance = distanceHorizontal;
+		}
+
+		rayAngle -= DEG;
+		rayAngle = limitAngle(rayAngle);
+	}
+}
+
+float limitAngle(float rad) {
+	rad = fmod(rad, 2 * PI);
+	if (rad < 0) rad += 2 * PI;
+	return rad;
+}
+
+//void drawRays2D() {
+//	glm::vec2 rayHit;
+//	glm::vec2 rayOffset;
+//	glm::ivec2 mapPosition;
+//	float maxDepth = 8;
+//	float currentDepth = 0;
+//	for (int i = 0; i < 1; i++) {
+//		// horizontal checking
+//		float depth = 0;
+//		float rayAngle = player_angle;
+//		float aTan = -1 / tanf(rayAngle);
+//		if (rayAngle < PI) { // looking up
+//			rayHit.y = (int)(playerPosition.y / tile_size) * tile_size - 0.0001f;
+//			rayHit.x = (playerPosition.y - rayHit.y) * aTan * playerPosition.x;
+//			rayOffset.y -= tile_size;
+//			rayOffset.x = -rayOffset.y * aTan;
+//		}
+//		if(rayAngle > PI) { // looking down
+//			rayHit.y = (int)(playerPosition.y / tile_size) * tile_size + tile_size;
+//			rayHit.x = (playerPosition.y - rayHit.y) * aTan * playerPosition.x;
+//			rayOffset.y = tile_size;
+//			rayOffset.x = -rayOffset.y * aTan;
+//		}
+//		if (rayAngle == 0.f || rayAngle == PI) {
+//			rayHit = playerPosition;
+//			currentDepth = maxDepth;
+//		}
+//
+//		while (currentDepth < maxDepth) {
+//			mapPosition = rayHit / tile_size;
+//			int mapIndex = mapPosition.y * map_width + mapPosition.x;
+//			printf("mapIndex = %d\n", mapIndex);
+//			if (mapIndex < (map_width * map_height) && mapIndex > 0 && map[mapIndex] == 1) { // hit a wall
+//				currentDepth = maxDepth;
+//			}
+//			else {
+//				rayHit += rayOffset;
+//				currentDepth += 1;
+//			}
+//		}
+//
+//		drawer.drawLine(playerPosition.x, playerPosition.y,
+//			rayHit.x, rayHit.y, shaderProgram);
+//	}
+//}
