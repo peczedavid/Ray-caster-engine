@@ -69,7 +69,6 @@ void PrimitiveDrawer::initRectBuffer() {
 }
 #pragma endregion
 
-
 #pragma region POINT
 void PrimitiveDrawer::drawPoint(float px, float py, const glm::vec3& color, float pointSize, ShaderProgram& shaderProgram) {
 	glBindBuffer(GL_ARRAY_BUFFER, this->vboPoint);
