@@ -6,14 +6,18 @@
 #include <string>
 #include "ShaderProgram.h"
 #include "PrimitiveDrawer.h"
+#include <math.h>
+constexpr float PI = 3.14159265359f;
 
 GLFWwindow* window;
-int viewport_width = 1280;
-int viewport_height = 720;
+int viewport_width = 1200;
+int viewport_height = 600;
 float t = 0, dt = 0;
-float player_speed = 100.f;
 
+float player_speed = 100.f;
 glm::vec2 playerPosition = glm::vec2(300, 300);
+glm::vec2 playerPositionDelta = glm::vec2(0, 0);
+float player_angle = 0.f;
 
 int map_width = 8, map_height = 8;
 float tile_size = 75;
@@ -22,8 +26,8 @@ int map[] = {
 	1, 0, 1, 0, 0, 0, 0, 1,
 	1, 0, 1, 0, 0, 0, 0, 1,
 	1, 0, 1, 0, 0, 0, 0, 1,
-	1, 0, 1, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 0, 0, 0, 1, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 1,
 	1, 1, 1, 1, 1, 1, 1, 1,
 };
@@ -86,21 +90,25 @@ int main() {
 		shaderProgram.Use();
 		drawer.setSize(viewport_width, viewport_height);
 		
-		// draw player
-		drawer.drawPoint(playerPosition.x, playerPosition.y, glm::vec3(1, 1, 0), 10, shaderProgram);
 		// draw map
-		drawer.fillRect(0, 0, tile_size * map_width, tile_size * map_height, glm::vec3(0, 0, 0), shaderProgram);
 		for (int i = 0; i < map_height; i++) {
 			for (int j = 0; j < map_width; j++) {
-				if(map[i * map_width + j] == 1)
-					drawer.fillRect(
-						j * tile_size, i * tile_size,
-						tile_size, tile_size,
-						glm::vec3(1, 1, 1), shaderProgram
-					);
+				glm::vec3 color;
+				if (map[i * map_width + j] == 1) color = glm::vec3(1, 1, 1);
+				else color = glm::vec3(0, 0, 0);
+				drawer.fillRect(
+					j * tile_size + 1, i * tile_size + 1,
+					tile_size - 2, tile_size - 2,
+					color, shaderProgram);
 			}
 		}
 
+		// draw player
+		drawer.drawPoint(playerPosition.x, playerPosition.y, glm::vec3(1, 1, 0), 10, shaderProgram);
+		drawer.drawLine(playerPosition.x, playerPosition.y,
+			playerPosition.x + playerPositionDelta.x * 40.f,
+			playerPosition.y + playerPositionDelta.y * 40.f,
+			glm::vec3(1, 1, 0), 3, shaderProgram);
 
 		// events/buffers
 		glfwSwapBuffers(window);
@@ -137,10 +145,13 @@ void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
-	glm::vec2 offset = glm::vec2(0, 0);
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) offset.y -= player_speed;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) offset.y += player_speed;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) offset.x -= player_speed;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) offset.x = player_speed;
-	playerPosition += offset * dt;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) player_angle += PI * dt;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) player_angle -= PI * dt;
+
+	playerPositionDelta.x = cosf(player_angle);
+	playerPositionDelta.y = -sinf(player_angle);
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) playerPosition += playerPositionDelta * player_speed * dt;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) playerPosition -= playerPositionDelta * player_speed * dt;
 }
+	
