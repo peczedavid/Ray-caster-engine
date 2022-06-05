@@ -24,6 +24,7 @@ float player_speed = 1.f;
 glm::vec2 playerPosition = glm::vec2(3.5, 5.5);
 glm::vec2 playerPositionDelta = glm::vec2(0, 0);
 float player_angle = PI/2 + 0.00001f;
+float collisionDistance = 0.25f;
 
 int map_width = 8, map_height = 10;
 float tile_size = 75;
@@ -153,8 +154,25 @@ void processInput(GLFWwindow* window) {
 	playerPositionDelta.x = cosf(player_angle);
 	playerPositionDelta.y = -sinf(player_angle);
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) playerPosition += playerPositionDelta * player_speed * dt;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) playerPosition -= playerPositionDelta * player_speed * dt;
+	glm::vec2 nextPosition = playerPosition;
+	int iNow = (int)playerPosition.y;
+	int jNow = (int)playerPosition.x;
+	int iNext = (int)nextPosition.y;
+	int jNext = (int)nextPosition.x;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		nextPosition += playerPositionDelta * player_speed * dt;
+		iNext = (int)(nextPosition.y + (playerPositionDelta.y * collisionDistance));
+		jNext = (int)(nextPosition.x + (playerPositionDelta.x * collisionDistance));
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		nextPosition -= playerPositionDelta * player_speed * dt;
+		iNext = (int)(nextPosition.y - (playerPositionDelta.y * collisionDistance));
+		jNext = (int)(nextPosition.x - (playerPositionDelta.x * collisionDistance));
+	}
+	if (mapWalls[iNow * map_width + jNext] == 0)
+		playerPosition.x = nextPosition.x;
+	if (mapWalls[iNext * map_width + jNow] == 0)
+		playerPosition.y = nextPosition.y;
 }
 	
 void drawMap2D() {
@@ -174,8 +192,8 @@ void drawMap2D() {
 void drawPlayer2D() {
 	drawer.drawPoint(playerPosition.x * tile_size, playerPosition.y * tile_size, glm::vec3(1, 1, 0), 10, shaderProgram);
 	drawer.drawLine(playerPosition.x * tile_size, playerPosition.y * tile_size,
-		(playerPosition.x + playerPositionDelta.x) * tile_size,
-		(playerPosition.y + playerPositionDelta.y) * tile_size,
+		(playerPosition.x + playerPositionDelta.x * 0.5f) * tile_size,
+		(playerPosition.y + playerPositionDelta.y * 0.5f) * tile_size,
 		glm::vec3(1, 1, 0), 3, shaderProgram);
 }
 
