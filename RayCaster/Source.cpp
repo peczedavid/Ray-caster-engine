@@ -334,7 +334,7 @@ void drawRays2D3D() {
 		if (lineHeight > maxLineHeight) lineHeight = maxLineHeight;
 
 		int idk = 10 / rayScale;
-		float lineOffset = (maxLineHeight - lineHeight) / 2;
+		float lineOffset = (maxLineHeight - lineHeight) / 2 + viewport_height / 9;
 		glm::vec2 lineStart = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineOffset);
 		glm::vec2 lineEnd = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineHeight + lineOffset);
 		drawer.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y, wallColor, idk, shaderProgram);
@@ -349,49 +349,3 @@ float limitAngle(float rad) {
 	if (rad < 0) rad += 2 * PI;
 	return rad;
 }
-
-//void drawRays2D() {
-//	glm::vec2 rayHit;
-//	glm::vec2 rayOffset;
-//	glm::ivec2 mapPosition;
-//	float maxDepth = 8;
-//	float currentDepth = 0;
-//	for (int i = 0; i < 1; i++) {
-//		// horizontal checking
-//		float depth = 0;
-//		float rayAngle = player_angle;
-//		float aTan = -1 / tanf(rayAngle);
-//		if (rayAngle < PI) { // looking up
-//			rayHit.y = (int)(playerPosition.y / tile_size) * tile_size - 0.0001f;
-//			rayHit.x = (playerPosition.y - rayHit.y) * aTan * playerPosition.x;
-//			rayOffset.y -= tile_size;
-//			rayOffset.x = -rayOffset.y * aTan;
-//		}
-//		if(rayAngle > PI) { // looking down
-//			rayHit.y = (int)(playerPosition.y / tile_size) * tile_size + tile_size;
-//			rayHit.x = (playerPosition.y - rayHit.y) * aTan * playerPosition.x;
-//			rayOffset.y = tile_size;
-//			rayOffset.x = -rayOffset.y * aTan;
-//		}
-//		if (rayAngle == 0.f || rayAngle == PI) {
-//			rayHit = playerPosition;
-//			currentDepth = maxDepth;
-//		}
-//
-//		while (currentDepth < maxDepth) {
-//			mapPosition = rayHit / tile_size;
-//			int mapIndex = mapPosition.y * map_width + mapPosition.x;
-//			printf("mapIndex = %d\n", mapIndex);
-//			if (mapIndex < (map_width * map_height) && mapIndex > 0 && map[mapIndex] == 1) { // hit a wall
-//				currentDepth = maxDepth;
-//			}
-//			else {
-//				rayHit += rayOffset;
-//				currentDepth += 1;
-//			}
-//		}
-//
-//		drawer.drawLine(playerPosition.x, playerPosition.y,
-//			rayHit.x, rayHit.y, shaderProgram);
-//	}
-//}
