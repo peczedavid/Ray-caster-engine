@@ -22,17 +22,17 @@ float t = 0, dt = 0;
 float player_speed = 125.f;
 glm::vec2 playerPosition = glm::vec2(300, 300);
 glm::vec2 playerPositionDelta = glm::vec2(0, 0);
-float player_angle = 0.f;
+float player_angle = PI/2 + 0.00001f;
 
 int map_width = 8, map_height = 8;
 float tile_size = 75;
 int map[] = {
-	1, 1, 1, 1, 1, 1, 1, 1,
-	1, 0, 1, 0, 0, 0, 0, 1,
-	1, 0, 1, 0, 0, 0, 0, 1,
-	1, 0, 1, 0, 0, 0, 0, 1,
-	1, 0, 0, 0, 0, 0, 0, 1,
-	1, 0, 0, 0, 0, 1, 0, 1,
+	2, 2, 2, 2, 1, 1, 1, 1,
+	2, 0, 2, 0, 0, 1, 0, 1,
+	2, 0, 2, 0, 0, 1, 0, 1,
+	2, 0, 2, 0, 0, 0, 0, 1,
+	2, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 1, 0, 0, 1, 1, 1,
 	1, 0, 0, 0, 0, 0, 0, 1,
 	1, 1, 1, 1, 1, 1, 1, 1,
 };
@@ -46,7 +46,7 @@ float limitAngle(float rad);
 
 void drawMap2D();
 void drawPlayer2D();
-void drawRays2D();
+void drawRays2D3D();
 
 int main() {
 	printf("Program starting\n");
@@ -105,7 +105,7 @@ int main() {
 		drawMap2D();
 
 		// draw player
-		drawRays2D();
+		drawRays2D3D();
 		drawPlayer2D();
 
 		// events/buffers
@@ -158,7 +158,7 @@ void drawMap2D() {
 	for (int i = 0; i < map_height; i++) {
 		for (int j = 0; j < map_width; j++) {
 			glm::vec3 color;
-			if (map[i * map_width + j] == 1) color = glm::vec3(1, 1, 1);
+			if (map[i * map_width + j] > 0) color = glm::vec3(1, 1, 1);
 			else color = glm::vec3(0, 0, 0);
 			drawer.fillRect(
 				j * tile_size + 1, i * tile_size + 1,
@@ -176,11 +176,13 @@ void drawPlayer2D() {
 		glm::vec3(1, 1, 0), 3, shaderProgram);
 }
 
-void drawRays2D() {
+void drawRays2D3D() {
 	float rayAngle = player_angle + DEG * fov / 2;
 	rayAngle = limitAngle(rayAngle);
 
 	for (int i = 0; i < fov; i++) {
+		int verticalWallType = 0;
+		int horizontalWallType = 0;
 		glm::vec2 rayHit{};
 		glm::vec2 rayOffset{};
 		glm::vec2 playerPosModel = playerPosition / tile_size;
@@ -225,8 +227,9 @@ void drawRays2D() {
 			int idx = i * map_width + j;
 			if (i >= 0 && i < map_height &&
 				j >= 0 && j < map_width &&
-				map[idx] == 1) { // hit a wall
+				map[idx] > 0) { // hit a wall
 				currentDepth = maxDepth;
+				verticalWallType = map[idx];
 			}
 			else {
 				rayHit += rayOffset;
@@ -276,8 +279,9 @@ void drawRays2D() {
 			int idx = i * map_width + j;
 			if (i >= 0 && i < map_height &&
 				j >= 0 && j < map_width &&
-				map[idx] == 1) { // hit a wall
+				map[idx] > 0) { // hit a wall
 				currentDepth = maxDepth;
+				horizontalWallType = map[idx];
 			}
 			else {
 				rayHit += rayOffset;
@@ -294,18 +298,40 @@ void drawRays2D() {
 		/*if (distanceVertical < distanceHorizontal) printf("RED\n");
 		else printf("GREEN\n");*/
 
-		float finalDistance = 0;
+		float finalDistance = 1000000000;
+		glm::vec3 wallColor = glm::vec3(0, 0, 0);
 
 		if(distanceVertical < distanceHorizontal) {
 			drawer.drawLine(playerPosition.x, playerPosition.y,
 				verticalHit.x * tile_size, verticalHit.y * tile_size, glm::vec3(1, 0, 0), 3, shaderProgram);
 			finalDistance = distanceVertical;
+			if (verticalWallType == 1)
+				wallColor = glm::vec3(0.5, 0, 0);
+			else if (verticalWallType == 2)
+				wallColor = glm::vec3(0, 0, 0.5);
 		}
-		else {
+		else if(distanceVertical > distanceHorizontal){
 			drawer.drawLine(playerPosition.x, playerPosition.y,
 				horizontalHit.x* tile_size, horizontalHit.y* tile_size, glm::vec3(1, 0, 0), 3, shaderProgram);
 			finalDistance = distanceHorizontal;
+			if (horizontalWallType == 1)
+				wallColor = glm::vec3(0.8, 0, 0);
+			else if (horizontalWallType == 2)
+				wallColor = glm::vec3(0, 0, 0.8);
 		}
+
+		float correctionAngle = limitAngle(player_angle - rayAngle);
+		finalDistance *= cosf(correctionAngle);
+
+		float maxLineHeight = 3*viewport_height/4;
+		float lineHeight = maxLineHeight / finalDistance;
+		if (lineHeight > maxLineHeight) lineHeight = maxLineHeight;
+
+		int idk = 9;
+		float lineOffset = (maxLineHeight - lineHeight) / 2;
+		glm::vec2 lineStart = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineOffset);
+		glm::vec2 lineEnd = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineHeight + lineOffset);
+		drawer.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y, wallColor, idk, shaderProgram);
 
 		rayAngle -= DEG;
 		rayAngle = limitAngle(rayAngle);
