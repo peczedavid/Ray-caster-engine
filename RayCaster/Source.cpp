@@ -7,16 +7,17 @@
 #include "ShaderProgram.h"
 #include "PrimitiveDrawer.h"
 #include <math.h>
-constexpr float PI = 3.14159265359f;
-constexpr float DEG = 0.0174532925f;
+float rayScale = 4.f;
+float PI = 3.14159265359f;
+float DEG = 0.0174532925f / rayScale;
 
 ShaderProgram shaderProgram;
 PrimitiveDrawer drawer;
 
 GLFWwindow* window;
-int viewport_width = 1200;
+int viewport_width = 1280;
 int viewport_height = 600;
-constexpr float fov = 60; // degrees
+constexpr float fov = 75; // degrees
 float t = 0, dt = 0;
 
 float player_speed = 125.f;
@@ -26,7 +27,7 @@ float player_angle = PI/2 + 0.00001f;
 
 int map_width = 8, map_height = 8;
 float tile_size = 75;
-int map[] = {
+int mapWalls[] = {
 	2, 2, 2, 2, 1, 1, 1, 1,
 	2, 0, 2, 0, 0, 1, 0, 1,
 	2, 0, 2, 0, 0, 1, 0, 1,
@@ -158,7 +159,7 @@ void drawMap2D() {
 	for (int i = 0; i < map_height; i++) {
 		for (int j = 0; j < map_width; j++) {
 			glm::vec3 color;
-			if (map[i * map_width + j] > 0) color = glm::vec3(1, 1, 1);
+			if (mapWalls[i * map_width + j] > 0) color = glm::vec3(1, 1, 1);
 			else color = glm::vec3(0, 0, 0);
 			drawer.fillRect(
 				j * tile_size + 1, i * tile_size + 1,
@@ -177,10 +178,10 @@ void drawPlayer2D() {
 }
 
 void drawRays2D3D() {
-	float rayAngle = player_angle + DEG * fov / 2;
+	float rayAngle = player_angle + DEG * fov / 2 * rayScale;
 	rayAngle = limitAngle(rayAngle);
 
-	for (int i = 0; i < fov; i++) {
+	for (int i = 0; i < fov * rayScale; i++) {
 		int verticalWallType = 0;
 		int horizontalWallType = 0;
 		glm::vec2 rayHit{};
@@ -227,9 +228,9 @@ void drawRays2D3D() {
 			int idx = i * map_width + j;
 			if (i >= 0 && i < map_height &&
 				j >= 0 && j < map_width &&
-				map[idx] > 0) { // hit a wall
+				mapWalls[idx] > 0) { // hit a wall
 				currentDepth = maxDepth;
-				verticalWallType = map[idx];
+				verticalWallType = mapWalls[idx];
 			}
 			else {
 				rayHit += rayOffset;
@@ -279,9 +280,9 @@ void drawRays2D3D() {
 			int idx = i * map_width + j;
 			if (i >= 0 && i < map_height &&
 				j >= 0 && j < map_width &&
-				map[idx] > 0) { // hit a wall
+				mapWalls[idx] > 0) { // hit a wall
 				currentDepth = maxDepth;
-				horizontalWallType = map[idx];
+				horizontalWallType = mapWalls[idx];
 			}
 			else {
 				rayHit += rayOffset;
@@ -327,7 +328,7 @@ void drawRays2D3D() {
 		float lineHeight = maxLineHeight / finalDistance;
 		if (lineHeight > maxLineHeight) lineHeight = maxLineHeight;
 
-		int idk = 9;
+		int idk = 10 / rayScale;
 		float lineOffset = (maxLineHeight - lineHeight) / 2;
 		glm::vec2 lineStart = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineOffset);
 		glm::vec2 lineEnd = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineHeight + lineOffset);
