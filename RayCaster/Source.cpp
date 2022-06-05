@@ -7,7 +7,7 @@
 #include "ShaderProgram.h"
 #include "PrimitiveDrawer.h"
 #include <math.h>
-float rayScale = 4.f;
+float rayScale = 1.f;
 float PI = 3.14159265359f;
 float DEG = 0.0174532925f / rayScale;
 
@@ -17,7 +17,7 @@ PrimitiveDrawer drawer;
 GLFWwindow* window;
 int viewport_width = 1280;
 int viewport_height = 600;
-constexpr float fov = 75; // degrees
+constexpr float fov = 60; // degrees
 float t = 0, dt = 0;
 
 float player_speed = 1.f;
@@ -366,7 +366,13 @@ void drawRays2D3D() {
 		float lineOffset = (maxLineHeight - lineHeight) / 2 + viewport_height / 9;
 		glm::vec2 lineStart = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineOffset);
 		glm::vec2 lineEnd = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineHeight + lineOffset);
-		drawer.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y, wallColor, idk, shaderProgram);
+
+		// Draw the wall
+		for (int y = 0; y < lineHeight; y++) {
+			drawer.drawPoint(lineStart.x, lineStart.y + y, wallColor, idk, shaderProgram);
+		}
+
+		//drawer.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y, wallColor, idk, shaderProgram);
 
 		rayAngle -= DEG;
 		rayAngle = limitAngle(rayAngle);
