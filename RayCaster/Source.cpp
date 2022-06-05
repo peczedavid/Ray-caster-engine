@@ -303,31 +303,42 @@ void drawRays2D3D() {
 
 		float finalDistance = 1000000000;
 		glm::vec3 wallColor = glm::vec3(0.2, 0.3, 0.3);
+		bool verticalWall = true;
+		int wallType = 0;
 
 		if(distanceVertical < distanceHorizontal) {
 			drawer.drawLine(playerPosition.x * tile_size, playerPosition.y * tile_size,
 				verticalHit.x * tile_size, verticalHit.y * tile_size, glm::vec3(1, 0, 0), 3, shaderProgram);
 			finalDistance = distanceVertical;
-			if (verticalWallType == 1)
-				wallColor = glm::vec3(0.5, 0, 0);
-			else if (verticalWallType == 2)
-				wallColor = glm::vec3(0, 0, 0.5);
 		}
 		else if(distanceVertical > distanceHorizontal){
 			drawer.drawLine(playerPosition.x * tile_size, playerPosition.y* tile_size,
 				horizontalHit.x* tile_size, horizontalHit.y* tile_size, glm::vec3(1, 0, 0), 3, shaderProgram);
 			finalDistance = distanceHorizontal;
-			if (horizontalWallType == 1)
-				wallColor = glm::vec3(0.8, 0, 0);
-			else if (horizontalWallType == 2)
-				wallColor = glm::vec3(0, 0, 0.8);
+			verticalWall = false;
 		}
+		if (verticalWall)
+			wallType = verticalWallType;
+		else
+			wallType = horizontalWallType;
 
 		float correctionAngle = limitAngle(player_angle - rayAngle);
 		finalDistance *= cosf(correctionAngle);
 
+		// Color
+		if (wallType == 1)
+			wallColor = glm::vec3(1, 0, 0);
+		else if (wallType == 2)
+			wallColor = glm::vec3(0, 0, 1);
+		// Shade
+		if (verticalWall)
+			wallColor *= 0.8;
+		else
+			wallColor *= 0.5;
 		// Fading
 		wallColor *= (1 - finalDistance / maxDepth);
+
+		
 
 		float maxLineHeight = 3*viewport_height/4;
 		float lineHeight = maxLineHeight / finalDistance;
