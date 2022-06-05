@@ -25,7 +25,7 @@ glm::vec2 playerPosition = glm::vec2(300, 300);
 glm::vec2 playerPositionDelta = glm::vec2(0, 0);
 float player_angle = PI/2 + 0.00001f;
 
-int map_width = 8, map_height = 8;
+int map_width = 8, map_height = 10;
 float tile_size = 75;
 int mapWalls[] = {
 	2, 2, 2, 2, 1, 1, 1, 1,
@@ -34,6 +34,8 @@ int mapWalls[] = {
 	2, 0, 2, 0, 0, 0, 0, 1,
 	2, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 1, 0, 0, 1, 1, 1,
+	1, 0, 0, 0, 0, 0, 0, 1,
+	1, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 1,
 	1, 1, 1, 1, 1, 1, 1, 1,
 };
@@ -300,7 +302,7 @@ void drawRays2D3D() {
 		else printf("GREEN\n");*/
 
 		float finalDistance = 1000000000;
-		glm::vec3 wallColor = glm::vec3(0, 0, 0);
+		glm::vec3 wallColor = glm::vec3(0.2, 0.3, 0.3);
 
 		if(distanceVertical < distanceHorizontal) {
 			drawer.drawLine(playerPosition.x, playerPosition.y,
@@ -323,6 +325,9 @@ void drawRays2D3D() {
 
 		float correctionAngle = limitAngle(player_angle - rayAngle);
 		finalDistance *= cosf(correctionAngle);
+
+		// Fading
+		wallColor *= (1 - finalDistance / maxDepth);
 
 		float maxLineHeight = 3*viewport_height/4;
 		float lineHeight = maxLineHeight / finalDistance;
