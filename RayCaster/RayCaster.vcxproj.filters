@@ -40,10 +40,16 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vert.glsl">
+    <None Include="drawer.vert">
       <Filter>Resource Files\shaders</Filter>
     </None>
-    <None Include="frag.glsl">
+    <None Include="drawer.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="screen.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="screen.frag">
       <Filter>Resource Files\shaders</Filter>
     </None>
   </ItemGroup>

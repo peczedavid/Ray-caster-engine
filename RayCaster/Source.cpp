@@ -7,6 +7,7 @@
 #include "ShaderProgram.h"
 #include "PrimitiveDrawer.h"
 #include <math.h>
+#include <vector>
 float rayScale = 1.f;
 float PI = 3.14159265359f;
 float DEG = 0.0174532925f / rayScale;
@@ -81,7 +82,7 @@ int main() {
 	}
 	printf("Glad loaded\n");
 
-	shaderProgram = ShaderProgram("vert.glsl", "frag.glsl");
+	shaderProgram = ShaderProgram("drawer.vert", "drawer.frag");
 	drawer = PrimitiveDrawer();
 	drawer.init();
 
@@ -367,7 +368,7 @@ void drawRays2D3D() {
 		glm::vec2 lineStart = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineOffset);
 		glm::vec2 lineEnd = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineHeight + lineOffset);
 
-		// Draw the wall
+		//// Draw the wall
 		for (int y = 0; y < lineHeight; y++) {
 			drawer.drawPoint(lineStart.x, lineStart.y + y, wallColor, idk, shaderProgram);
 		}
