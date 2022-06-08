@@ -162,8 +162,11 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-	rayScale += 0.2f * yoffset;
-	rayScale = glm::clamp(rayScale, 1.f, 20.f);
+	float mul = 3.f / 2.f;
+	if (yoffset == -1) mul = 2.f / 3.f;
+	//rayScale += 0.5f * yoffset;
+	rayScale *= mul;
+	rayScale = glm::clamp(rayScale, 0.1f, 20.f);
 
 	DEG = 0.0174532925f / rayScale;
 	bufferWidth = fov * rayScale;
