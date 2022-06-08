@@ -9,19 +9,19 @@
 #include "ScreenBuffer.h"
 #include <math.h>
 #include <vector>
-float rayScale = 1.f;
+float rayScale = 1.0f;
 constexpr float fov = 60; // degrees
 float PI = 3.14159265359f;
 float DEG = 0.0174532925f / rayScale;
 
-int bufferWidth = fov*rayScale, bufferHeight = 3*bufferWidth/4;
+int bufferWidth = fov * rayScale, bufferHeight = 0.75f * bufferWidth;
 ScreenBuffer screenBuffer;
 ShaderProgram drawerProgram;
 PrimitiveDrawer drawer;
 
 GLFWwindow* window;
 int viewport_width = 1000;
-int viewport_height = 3* viewport_width /4;
+int viewport_height = 0.75f * viewport_width;
 
 float t = 0, dt = 0;
 float player_speed = 1.f;
@@ -46,6 +46,7 @@ int mapWalls[] = {
 };
 
 void error_callback(int error, const char* description);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 void processInput(GLFWwindow* window);
@@ -78,6 +79,7 @@ int main() {
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(0); // vsync off
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetScrollCallback(window, scroll_callback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		printf("Failed to load glad");
@@ -157,6 +159,17 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	viewport_width = width;
 	viewport_height = height;
 	glViewport(0, 0, viewport_width, viewport_height);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	rayScale += 0.2f * yoffset;
+	rayScale = glm::clamp(rayScale, 1.f, 20.f);
+
+	DEG = 0.0174532925f / rayScale;
+	bufferWidth = fov * rayScale;
+	bufferHeight = 0.75f * bufferWidth;
+
+	screenBuffer.resize(bufferWidth, bufferHeight);
 }
 
 void processInput(GLFWwindow* window) {
@@ -331,9 +344,6 @@ void drawRays2D3D() {
 
 		float distanceVertical = glm::distance(playerPosition, verticalHit);
 		float distanceHorizontal = glm::distance(playerPosition, horizontalHit);
-
-		/*if (distanceVertical < distanceHorizontal) printf("RED\n");
-		else printf("GREEN\n");*/
 
 		float finalDistance = 1000000000;
 		glm::vec3 wallColor = glm::vec3(0.0, 0.0, 0.0);

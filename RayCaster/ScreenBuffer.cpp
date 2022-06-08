@@ -114,6 +114,14 @@ void ScreenBuffer::drawBuffer() {
 	clearBuffer();
 }
 
+void ScreenBuffer::resize(int bufferWidth, int bufferHeight) {
+	m_bufferWidth = bufferWidth;
+	m_bufferHeight = bufferHeight;
+
+	m_pixelBuffer.resize(m_bufferWidth * m_bufferHeight);
+	clearBuffer();
+}
+
 void ScreenBuffer::clearBuffer() {
 	for (auto& pixel : m_pixelBuffer)
 		pixel = m_backgroundColor;

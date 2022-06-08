@@ -23,6 +23,8 @@ public:
 	void setPixel(glm::vec4 color, int x, int y);
 
 	void drawBuffer();
+
+	void resize(int bufferWidth, int bufferHeight);
 private:
 	void initBuffers(std::vector<glm::vec2>& vertices);
 
