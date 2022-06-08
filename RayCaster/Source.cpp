@@ -9,7 +9,7 @@
 #include "ScreenBuffer.h"
 #include <math.h>
 #include <vector>
-float rayScale = 5.f;
+float rayScale = 1.f;
 constexpr float fov = 60; // degrees
 float PI = 3.14159265359f;
 float DEG = 0.0174532925f / rayScale;
@@ -88,7 +88,7 @@ int main() {
 	std::vector<glm::vec2> bufferVertices = {
 		glm::vec2(0.f, 0.f), glm::vec2(1.f, 0.f), glm::vec2(1.f, 1.f), glm::vec2(0.f, 1.f)
 	};
-	//screenBuffer = ScreenBuffer(320, 240, glm::vec4(1.f, 0.f, 1.f, 1.f), bufferVertices);
+	//screenBuffer = ScreenBuffer(bufferWidth, bufferHeight, glm::vec4(0.2f, 0.2f, 1.f, 1.f), bufferVertices);
 	screenBuffer = ScreenBuffer(bufferWidth, bufferHeight, glm::vec4(0.2f, 0.2f, 1.f, 1.f));
 
 	//drawerProgram = ShaderProgram("drawer.vert", "drawer.frag");
@@ -336,7 +336,7 @@ void drawRays2D3D() {
 		else printf("GREEN\n");*/
 
 		float finalDistance = 1000000000;
-		glm::vec3 wallColor = glm::vec3(0.2, 0.3, 0.3);
+		glm::vec3 wallColor = glm::vec3(0.0, 0.0, 0.0);
 		bool verticalWall = true;
 		int wallType = 0;
 
