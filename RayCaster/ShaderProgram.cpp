@@ -75,6 +75,12 @@ void ShaderProgram::Delete()
 		glDeleteProgram(shaderProgramId);
 }
 
+void ShaderProgram::setUniform(int i, const std::string& name)
+{
+	GLuint location = getUniformLocation(name);
+	if (location >= 0) glUniform1i(location, i);
+}
+
 void ShaderProgram::setUniform(GLuint i, const std::string& name)
 {
 	GLuint location = getUniformLocation(name);

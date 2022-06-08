@@ -24,6 +24,7 @@ void PrimitiveDrawer::setSize(int width, int height) {
 
 #pragma region RECTANGLE
 void PrimitiveDrawer::fillRect(float px, float py, float rect_width, float rect_height, const glm::vec3& color, ShaderProgram& shaderProgram) {
+	glBindVertexArray(this->vaoRect);
 	glBindBuffer(GL_ARRAY_BUFFER, this->vboRect);
 
 	px = (px / this->width) * 2.f - 1.f;
@@ -43,11 +44,12 @@ void PrimitiveDrawer::fillRect(float px, float py, float rect_width, float rect_
 	// Set the color
 	shaderProgram.setUniform(color, std::string("color"));
 
-	glBindVertexArray(this->vaoRect);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->eboRect);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
 	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
+
 void PrimitiveDrawer::fillRect(float px, float py, float rect_width, float rect_height, ShaderProgram& shaderProgram) {
 	this->fillRect(px, py, rect_width, rect_height, this->rectColor, shaderProgram);
 }
@@ -69,11 +71,14 @@ void PrimitiveDrawer::initRectBuffer() {
 		0, 3, 2
 	};
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 #pragma endregion
 
 #pragma region POINT
 void PrimitiveDrawer::drawPoint(float px, float py, const glm::vec3& color, float pointSize, ShaderProgram& shaderProgram) {
+	glBindVertexArray(this->vaoPoint);
 	glBindBuffer(GL_ARRAY_BUFFER, this->vboPoint);
 
 	px = (px / this->width) * 2.f - 1.f;
@@ -88,8 +93,7 @@ void PrimitiveDrawer::drawPoint(float px, float py, const glm::vec3& color, floa
 
 	// Set the width
 	glPointSize(pointSize);
-
-	glBindVertexArray(this->vaoPoint);
+	
 	glDrawArrays(GL_POINTS, 0, 1);
 	glBindVertexArray(0);
 }
@@ -112,6 +116,7 @@ void PrimitiveDrawer::initPointBuffer() {
 
 #pragma region LINE
 void PrimitiveDrawer::drawLine(float start_x, float start_y, float end_x, float end_y, const glm::vec3& color, float lineWidth, ShaderProgram& shaderProgram) {
+	glBindVertexArray(this->vaoLine);
 	glBindBuffer(GL_ARRAY_BUFFER, this->vboLine);
 
 	start_x = (start_x / this->width) * 2.f - 1.f;
@@ -129,7 +134,6 @@ void PrimitiveDrawer::drawLine(float start_x, float start_y, float end_x, float 
 	// Set the width
 	glLineWidth(lineWidth);
 
-	glBindVertexArray(this->vaoLine);
 	glDrawArrays(GL_LINES, 0, 2);
 	glBindVertexArray(0);
 }

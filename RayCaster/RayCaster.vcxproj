@@ -153,11 +153,13 @@
   <ItemGroup>
     <ClCompile Include="glad.c" />
     <ClCompile Include="PrimitiveDrawer.cpp" />
+    <ClCompile Include="ScreenBuffer.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrimitiveDrawer.h" />
+    <ClInclude Include="ScreenBuffer.h" />
     <ClInclude Include="ShaderProgram.h" />
   </ItemGroup>
   <ItemGroup>

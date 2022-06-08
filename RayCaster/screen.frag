@@ -1,12 +1,12 @@
 #version 460 core
 precision highp float;
 
-out vec4 outColor;
+out vec4 bufferPixelColor;
 
 in vec2 uv;
 
-uniform sampler2D screen;
+uniform sampler2D u_screenTexture;
 
 void main() {
-	outColor = texture2D(screen, uv);
+	bufferPixelColor = texture(u_screenTexture, uv);
 }

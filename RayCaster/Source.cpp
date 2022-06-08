@@ -6,18 +6,21 @@
 #include <string>
 #include "ShaderProgram.h"
 #include "PrimitiveDrawer.h"
+#include "ScreenBuffer.h"
 #include <math.h>
 #include <vector>
 float rayScale = 1.f;
 float PI = 3.14159265359f;
 float DEG = 0.0174532925f / rayScale;
 
-ShaderProgram shaderProgram;
+int bufferWidth = 160, bufferHeight = 120;
+ScreenBuffer screenBuffer;
+ShaderProgram drawerProgram;
 PrimitiveDrawer drawer;
 
 GLFWwindow* window;
 int viewport_width = 1280;
-int viewport_height = 600;
+int viewport_height = 800;
 constexpr float fov = 60; // degrees
 float t = 0, dt = 0;
 
@@ -28,7 +31,7 @@ float player_angle = PI/2 + 0.00001f;
 float collisionDistance = 0.25f;
 
 int map_width = 8, map_height = 10;
-float tile_size = 75;
+float tile_size = 10;
 int mapWalls[] = {
 	2, 2, 2, 2, 1, 1, 1, 1,
 	2, 0, 2, 0, 0, 1, 0, 1,
@@ -82,9 +85,15 @@ int main() {
 	}
 	printf("Glad loaded\n");
 
-	shaderProgram = ShaderProgram("drawer.vert", "drawer.frag");
-	drawer = PrimitiveDrawer();
-	drawer.init();
+	std::vector<glm::vec2> bufferVertices = {
+		glm::vec2(0.f, 0.f), glm::vec2(1.f, 0.f), glm::vec2(1.f, 1.f), glm::vec2(0.f, 1.f)
+	};
+	//screenBuffer = ScreenBuffer(320, 240, glm::vec4(1.f, 0.f, 1.f, 1.f), bufferVertices);
+	screenBuffer = ScreenBuffer(bufferWidth, bufferHeight, glm::vec4(0.2f, 0.2f, 1.f, 1.f));
+
+	//drawerProgram = ShaderProgram("drawer.vert", "drawer.frag");
+	//drawer = PrimitiveDrawer();
+	//drawer.init();
 
 	float lastFrameTime = 0;
 	float lastTitleUpdate = 0; 
@@ -103,15 +112,21 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		shaderProgram.Use();
-		drawer.setSize(viewport_width, viewport_height);
+		//drawerProgram.Use();
+		//drawer.setSize(viewport_width, viewport_height);
 		
 		// draw map
-		drawMap2D();
+		//drawMap2D();
 
 		// draw player
 		drawRays2D3D();
-		drawPlayer2D();
+		//drawPlayer2D();
+		/*for (int x = 0; x < 320/2; x++) {
+			for (int y = 0; y < 240/2; y++) {
+				screenBuffer.setPixel(glm::vec4(1, 0, 0, 1), x, y);
+			}
+		}*/
+		screenBuffer.drawBuffer();
 
 		// events/buffers
 		glfwSwapBuffers(window);
@@ -185,17 +200,17 @@ void drawMap2D() {
 			drawer.fillRect(
 				j * tile_size + 1, i * tile_size + 1,
 				tile_size - 2, tile_size - 2,
-				color, shaderProgram);
+				color, drawerProgram);
 		}
 	}
 }
 
 void drawPlayer2D() {
-	drawer.drawPoint(playerPosition.x * tile_size, playerPosition.y * tile_size, glm::vec3(1, 1, 0), 10, shaderProgram);
+	drawer.drawPoint(playerPosition.x * tile_size, playerPosition.y * tile_size, glm::vec3(1, 1, 0), 10, drawerProgram);
 	drawer.drawLine(playerPosition.x * tile_size, playerPosition.y * tile_size,
 		(playerPosition.x + playerPositionDelta.x * 0.5f) * tile_size,
 		(playerPosition.y + playerPositionDelta.y * 0.5f) * tile_size,
-		glm::vec3(1, 1, 0), 3, shaderProgram);
+		glm::vec3(1, 1, 0), 3, drawerProgram);
 }
 
 void drawRays2D3D() {
@@ -326,13 +341,13 @@ void drawRays2D3D() {
 		int wallType = 0;
 
 		if(distanceVertical < distanceHorizontal) {
-			drawer.drawLine(playerPosition.x * tile_size, playerPosition.y * tile_size,
-				verticalHit.x * tile_size, verticalHit.y * tile_size, glm::vec3(1, 0, 0), 3, shaderProgram);
+			//drawer.drawLine(playerPosition.x * tile_size, playerPosition.y * tile_size,
+			//	verticalHit.x * tile_size, verticalHit.y * tile_size, glm::vec3(1, 0, 0), 3, drawerProgram);
 			finalDistance = distanceVertical;
 		}
 		else if(distanceVertical > distanceHorizontal){
-			drawer.drawLine(playerPosition.x * tile_size, playerPosition.y* tile_size,
-				horizontalHit.x* tile_size, horizontalHit.y* tile_size, glm::vec3(1, 0, 0), 3, shaderProgram);
+			//drawer.drawLine(playerPosition.x * tile_size, playerPosition.y* tile_size,
+			//	horizontalHit.x* tile_size, horizontalHit.y* tile_size, glm::vec3(1, 0, 0), 3, drawerProgram);
 			finalDistance = distanceHorizontal;
 			verticalWall = false;
 		}
@@ -359,18 +374,22 @@ void drawRays2D3D() {
 
 		
 
-		float maxLineHeight = 3*viewport_height/4;
+		//float maxLineHeight = 3*viewport_height/4;
+		float maxLineHeight = 3 * bufferWidth / 4;
 		float lineHeight = maxLineHeight / finalDistance;
 		if (lineHeight > maxLineHeight) lineHeight = maxLineHeight;
 
-		int idk = 10 / rayScale;
-		float lineOffset = (maxLineHeight - lineHeight) / 2 + viewport_height / 9;
-		glm::vec2 lineStart = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineOffset);
-		glm::vec2 lineEnd = glm::vec2(i * idk + map_width * tile_size + tile_size / 2, lineHeight + lineOffset);
+		//int idk = 10 / rayScale;
+		//int idk = 10 / rayScale;
+		//float lineOffset = (maxLineHeight - lineHeight) / 2 + viewport_height / 9;
+		float lineOffset = (maxLineHeight - lineHeight) / 2;
+		glm::vec2 lineStart = glm::vec2(i + map_width * tile_size, lineOffset);
+		glm::vec2 lineEnd = glm::vec2(i + map_width * tile_size, lineHeight + lineOffset);
 
-		//// Draw the wall
+		// Draw the wall
 		for (int y = 0; y < lineHeight; y++) {
-			drawer.drawPoint(lineStart.x, lineStart.y + y, wallColor, idk, shaderProgram);
+			//drawer.drawPoint(lineStart.x, lineStart.y + y, wallColor, idk, drawerProgram);
+			screenBuffer.setPixel(glm::vec4(wallColor, 1.f), lineStart.x, lineStart.y + y);
 		}
 
 		//drawer.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y, wallColor, idk, shaderProgram);

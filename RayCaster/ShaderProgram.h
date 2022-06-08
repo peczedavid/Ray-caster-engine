@@ -26,6 +26,7 @@ public:
 	void Use();
 	void Delete();
 
+	void setUniform(int i, const std::string& name);
 	void setUniform(GLuint i, const std::string& name);
 	void setUniform(GLfloat f, const std::string& name);
 	void setUniform(const glm::vec3& vec, const std::string& name);
