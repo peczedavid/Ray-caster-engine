@@ -9,21 +9,21 @@
 #include "ScreenBuffer.h"
 #include <math.h>
 #include <vector>
-float rayScale = 1.f;
+float rayScale = 5.f;
+constexpr float fov = 60; // degrees
 float PI = 3.14159265359f;
 float DEG = 0.0174532925f / rayScale;
 
-int bufferWidth = 160, bufferHeight = 120;
+int bufferWidth = fov*rayScale, bufferHeight = 3*bufferWidth/4;
 ScreenBuffer screenBuffer;
 ShaderProgram drawerProgram;
 PrimitiveDrawer drawer;
 
 GLFWwindow* window;
-int viewport_width = 1280;
-int viewport_height = 800;
-constexpr float fov = 60; // degrees
-float t = 0, dt = 0;
+int viewport_width = 1000;
+int viewport_height = 3* viewport_width /4;
 
+float t = 0, dt = 0;
 float player_speed = 1.f;
 glm::vec2 playerPosition = glm::vec2(3.5, 5.5);
 glm::vec2 playerPositionDelta = glm::vec2(0, 0);
@@ -375,7 +375,7 @@ void drawRays2D3D() {
 		
 
 		//float maxLineHeight = 3*viewport_height/4;
-		float maxLineHeight = 3 * bufferWidth / 4;
+		float maxLineHeight = bufferHeight;
 		float lineHeight = maxLineHeight / finalDistance;
 		if (lineHeight > maxLineHeight) lineHeight = maxLineHeight;
 
@@ -383,8 +383,8 @@ void drawRays2D3D() {
 		//int idk = 10 / rayScale;
 		//float lineOffset = (maxLineHeight - lineHeight) / 2 + viewport_height / 9;
 		float lineOffset = (maxLineHeight - lineHeight) / 2;
-		glm::vec2 lineStart = glm::vec2(i + map_width * tile_size, lineOffset);
-		glm::vec2 lineEnd = glm::vec2(i + map_width * tile_size, lineHeight + lineOffset);
+		glm::vec2 lineStart = glm::vec2(i, lineOffset);
+		glm::vec2 lineEnd = glm::vec2(i, lineHeight + lineOffset);
 
 		// Draw the wall
 		for (int y = 0; y < lineHeight; y++) {
