@@ -7,8 +7,10 @@
 #include "ShaderProgram.h"
 #include "PrimitiveDrawer.h"
 #include "ScreenBuffer.h"
+#include "Texture.h"
 #include <math.h>
 #include <vector>
+
 float rayScale = 1.0f;
 constexpr float fov = 60; // degrees
 float PI = 3.14159265359f;
@@ -22,6 +24,8 @@ PrimitiveDrawer drawer;
 GLFWwindow* window;
 int viewport_width = 1000;
 int viewport_height = 0.75f * viewport_width;
+constexpr int texture_width = 64;
+constexpr int texture_height = 64;
 
 float t = 0, dt = 0;
 float player_speed = 1.f;
@@ -96,6 +100,20 @@ int main() {
 	//drawerProgram = ShaderProgram("drawer.vert", "drawer.frag");
 	//drawer = PrimitiveDrawer();
 	//drawer.init();
+
+	std::vector<glm::vec4> checkerBoard;
+	checkerBoard.resize(texture_width * texture_height);
+	const glm::vec4 white(1.f, 1.f, 1.f, 1.f);
+	const glm::vec4 black(0.f, 0.f, 0.f, 1.f);
+	for (int x = 0; x < texture_width; x++) {
+		for (int y = 0; y < texture_height; y++) {
+			checkerBoard[x * texture_width + y] =
+				(x & 1) ^ (y ^ 1) ? black : white;
+		}
+	}
+
+	std::vector<Texture> textures;
+	textures.resize(2);
 
 	float lastFrameTime = 0;
 	float lastTitleUpdate = 0; 

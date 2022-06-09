@@ -161,6 +161,7 @@
     <ClInclude Include="PrimitiveDrawer.h" />
     <ClInclude Include="ScreenBuffer.h" />
     <ClInclude Include="ShaderProgram.h" />
+    <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="drawer.frag" />
