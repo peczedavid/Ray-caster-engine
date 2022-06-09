@@ -106,8 +106,9 @@ int main() {
 	//drawer.init();
 
 	textures.resize(2);
-	textures[0] = Texture(texture_width, texture_height, genCheckerBoardTexture(4, 4));
-	textures[1] = Texture(texture_width, texture_height, genCheckerBoardTexture(8, 8));
+	//textures[0] = Texture(texture_width, texture_height, genCheckerBoardTexture(4, 4));
+	textures[0] = Texture(texture_width, texture_height, "xd1.png");
+	textures[1] = Texture(texture_width, texture_height, "xd2.png");
 
 	float lastFrameTime = 0;
 	float lastTitleUpdate = 0; 
@@ -265,7 +266,7 @@ void drawRays2D3D() {
 			//drawer.drawPoint((rayHit.x + rayOffset.x) * tile_size, (rayHit.y + rayOffset.y) * tile_size,
 			//	glm::vec3(0, 0, 1), 10, shaderProgram);
 		}
-		if (rayAngle > PI/2 && rayAngle < 3*PI/2) { // looking left
+		if (rayAngle > (PI/2.f) && rayAngle < (3.f*PI/2.f)) { // looking left
 			rayHit.x = (int)playerPosition.x;
 			float w = playerPosition.x - rayHit.x;
 			rayHit.y = playerPosition.y + tanf(rayAngle) * w;
@@ -361,6 +362,7 @@ void drawRays2D3D() {
 		float distanceHorizontal = glm::distance(playerPosition, horizontalHit);
 
 		float finalDistance = 1000000000;
+		glm::vec2 finalHit{};
 		bool verticalWall = true;
 		int wallType = 0;
 
@@ -368,11 +370,13 @@ void drawRays2D3D() {
 			//drawer.drawLine(playerPosition.x * tile_size, playerPosition.y * tile_size,
 			//	verticalHit.x * tile_size, verticalHit.y * tile_size, glm::vec3(1, 0, 0), 3, drawerProgram);
 			finalDistance = distanceVertical;
+			finalHit = verticalHit;
 		}
 		else if(distanceVertical > distanceHorizontal){
 			//drawer.drawLine(playerPosition.x * tile_size, playerPosition.y* tile_size,
 			//	horizontalHit.x* tile_size, horizontalHit.y* tile_size, glm::vec3(1, 0, 0), 3, drawerProgram);
 			finalDistance = distanceHorizontal;
+			finalHit = horizontalHit;
 			verticalWall = false;
 		}
 		if (verticalWall)
@@ -403,28 +407,59 @@ void drawRays2D3D() {
 		float textureY = textureYOffset * textureYStep;
 		float textureX;// = (int)(rayHit.x * texture_width) % texture_width;
 		if (verticalWall)
-			textureX = (int)(verticalHit.y * texture_width) % texture_width;
+			//textureX = (int)(finalHit.y * texture_width) % texture_width;
+			textureX = (finalHit.y - (int)finalHit.y) * texture_width;
 		else
-			textureX = (int)(horizontalHit.x * texture_width) % texture_width;
-		//printf("rayHit.x=%3.3f\n", rayHit.x);
-		if (rayAngle > PI) { // looking down
+			//textureX = (int)(finalHit.x * texture_width) % texture_width;
+			textureX = (finalHit.x - (int)finalHit.x) * texture_width;
+
+		/*if (rayAngle > PI) {
 			textureX = texture_width - 1 - textureX;
 		}
-		if (rayAngle > PI / 2.f && rayAngle < PI) {
+		if (rayAngle > (PI / 2.f) && rayAngle < (3.f*PI/2.f)) {
 			textureX = texture_width - 1 - textureX;
-		}
+		}*/
 
 		Texture texture;
-		if (wallType == 1) texture = textures[0];
-		else if (wallType == 2) texture = textures[1];
+		texture = textures[wallType - 1];
 		glm::vec4 wallColor(0.0f, 0.0f, 0.0f, 1.f);
 		// Draw the wall
 		for (int y = 0; y < lineHeight; y++) {
 			// Color
-			if(playerPosition.x > rayHit.x)
-				wallColor = texture.sample(textureX, texture_height - (textureY * texture_height));
-			else
-				wallColor = texture.sample(textureX, textureY * texture_height);
+			int correctedY = textureY * texture_height;
+
+			if (rayAngle > PI) {
+				if (!verticalWall) {
+					//correctedY = texture_height - 1 - correctedY;
+					textureX = (1.f - (finalHit.x - (int)finalHit.x)) * texture_width;
+				}
+			}
+
+			if (rayAngle > (PI / 2.f) && rayAngle < (3.f * PI / 2.f)) {
+				if (verticalWall) {
+					textureX = (1.f - (finalHit.y - (int)finalHit.y)) * texture_width;
+
+					//textureX = texture_width - 1 - textureX;
+					//if (playerPosition.y < rayHit.y) {
+					//correctedY = texture_height - 1 - correctedY;
+					//}
+				}
+			}
+
+			/*if (verticalWall) {
+				if (playerPosition.y < rayHit.y)
+					correctedY = texture_height - 1 - correctedY;
+			}
+			else {
+				if (playerPosition.x > rayHit.x)
+					correctedY = texture_height - (textureY * texture_height);
+			}*/
+			
+			
+
+				wallColor = texture.sample(textureX, correctedY);
+
+			
 			// Shade
 			if (verticalWall)
 				wallColor *= 0.8;
