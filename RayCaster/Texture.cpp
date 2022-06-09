@@ -3,7 +3,7 @@
 Texture::Texture() :
 	m_Width(0), m_Height(0) { }
 
-Texture::Texture(int width, int height, std::vector<glm::vec4>& pixelBuffer) : 
+Texture::Texture(int width, int height, std::vector<glm::vec4> pixelBuffer) : 
 	m_Width(width), m_Height(height), m_pixelBuffer(pixelBuffer) { }
 
 glm::vec4 Texture::sample(int x, int y) {

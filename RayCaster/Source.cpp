@@ -11,7 +11,7 @@
 #include <math.h>
 #include <vector>
 
-float rayScale = 1.0f;
+float rayScale = 10.0f;
 constexpr float fov = 60; // degrees
 float PI = 3.14159265359f;
 float DEG = 0.0174532925f / rayScale;
@@ -21,11 +21,13 @@ ScreenBuffer screenBuffer;
 ShaderProgram drawerProgram;
 PrimitiveDrawer drawer;
 
+std::vector<Texture> textures;
+
 GLFWwindow* window;
 int viewport_width = 1000;
 int viewport_height = 0.75f * viewport_width;
-constexpr int texture_width = 64;
-constexpr int texture_height = 64;
+int texture_width = 64;
+int texture_height = 64;
 
 float t = 0, dt = 0;
 float player_speed = 1.f;
@@ -56,6 +58,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 float limitAngle(float rad);
+
+std::vector<glm::vec4> genCheckerBoardTexture(int xDim, int yDim);
 
 void drawMap2D();
 void drawPlayer2D();
@@ -101,19 +105,9 @@ int main() {
 	//drawer = PrimitiveDrawer();
 	//drawer.init();
 
-	std::vector<glm::vec4> checkerBoard;
-	checkerBoard.resize(texture_width * texture_height);
-	const glm::vec4 white(1.f, 1.f, 1.f, 1.f);
-	const glm::vec4 black(0.f, 0.f, 0.f, 1.f);
-	for (int x = 0; x < texture_width; x++) {
-		for (int y = 0; y < texture_height; y++) {
-			checkerBoard[x * texture_width + y] =
-				(x & 1) ^ (y ^ 1) ? black : white;
-		}
-	}
-
-	std::vector<Texture> textures;
 	textures.resize(2);
+	textures[0] = Texture(texture_width, texture_height, genCheckerBoardTexture(4, 4));
+	textures[1] = Texture(texture_width, texture_height, genCheckerBoardTexture(8, 8));
 
 	float lastFrameTime = 0;
 	float lastTitleUpdate = 0; 
@@ -257,7 +251,7 @@ void drawRays2D3D() {
 		glm::vec2 rayHit{};
 		glm::vec2 rayOffset{};
 		//glm::vec2 playerPosModel = playerPosition;// / tile_size;
-		float maxDepth = 8;
+		float maxDepth = 10;
 		float currentDepth = 0;
 		
 		// vertical lines checking
@@ -367,7 +361,6 @@ void drawRays2D3D() {
 		float distanceHorizontal = glm::distance(playerPosition, horizontalHit);
 
 		float finalDistance = 1000000000;
-		glm::vec3 wallColor = glm::vec3(0.0, 0.0, 0.0);
 		bool verticalWall = true;
 		int wallType = 0;
 
@@ -390,25 +383,15 @@ void drawRays2D3D() {
 		float correctionAngle = limitAngle(player_angle - rayAngle);
 		finalDistance *= cosf(correctionAngle);
 
-		// Color
-		if (wallType == 1)
-			wallColor = glm::vec3(1, 0, 0);
-		else if (wallType == 2)
-			wallColor = glm::vec3(0, 0, 1);
-		// Shade
-		if (verticalWall)
-			wallColor *= 0.8;
-		else
-			wallColor *= 0.5;
-		// Fading
-		wallColor *= (1 - finalDistance / maxDepth);
-
-		
-
 		//float maxLineHeight = 3*viewport_height/4;
 		float maxLineHeight = bufferHeight;
 		float lineHeight = maxLineHeight / finalDistance;
-		if (lineHeight > maxLineHeight) lineHeight = maxLineHeight;
+		float textureYStep = 1 / lineHeight;
+		float textureYOffset = 0;
+		if (lineHeight > maxLineHeight) {
+			textureYOffset = (lineHeight - maxLineHeight) / 2.f;
+			lineHeight = maxLineHeight;
+		}
 
 		//int idk = 10 / rayScale;
 		//int idk = 10 / rayScale;
@@ -417,10 +400,42 @@ void drawRays2D3D() {
 		glm::vec2 lineStart = glm::vec2(i, lineOffset);
 		glm::vec2 lineEnd = glm::vec2(i, lineHeight + lineOffset);
 
+		float textureY = textureYOffset * textureYStep;
+		float textureX;// = (int)(rayHit.x * texture_width) % texture_width;
+		if (verticalWall)
+			textureX = (int)(verticalHit.y * texture_width) % texture_width;
+		else
+			textureX = (int)(horizontalHit.x * texture_width) % texture_width;
+		//printf("rayHit.x=%3.3f\n", rayHit.x);
+		if (rayAngle > PI) { // looking down
+			textureX = texture_width - 1 - textureX;
+		}
+		if (rayAngle > PI / 2.f && rayAngle < PI) {
+			textureX = texture_width - 1 - textureX;
+		}
+
+		Texture texture;
+		if (wallType == 1) texture = textures[0];
+		else if (wallType == 2) texture = textures[1];
+		glm::vec4 wallColor(0.0f, 0.0f, 0.0f, 1.f);
 		// Draw the wall
 		for (int y = 0; y < lineHeight; y++) {
+			// Color
+			if(playerPosition.x > rayHit.x)
+				wallColor = texture.sample(textureX, texture_height - (textureY * texture_height));
+			else
+				wallColor = texture.sample(textureX, textureY * texture_height);
+			// Shade
+			if (verticalWall)
+				wallColor *= 0.8;
+			else
+				wallColor *= 0.5;
+			// Fading
+			wallColor *= (1 - finalDistance / maxDepth);
 			//drawer.drawPoint(lineStart.x, lineStart.y + y, wallColor, idk, drawerProgram);
-			screenBuffer.setPixel(glm::vec4(wallColor, 1.f), lineStart.x, lineStart.y + y);
+			screenBuffer.setPixel(wallColor, lineStart.x, lineStart.y + y);
+
+			textureY += textureYStep;
 		}
 
 		//drawer.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y, wallColor, idk, shaderProgram);
@@ -434,4 +449,19 @@ float limitAngle(float rad) {
 	rad = fmod(rad, 2 * PI);
 	if (rad < 0) rad += 2 * PI;
 	return rad;
+}
+
+std::vector<glm::vec4> genCheckerBoardTexture(int xDim, int yDim) {
+	std::vector<glm::vec4> checkerBoard;
+	checkerBoard.resize(texture_width * texture_height);
+	const glm::vec4 white(1.f, 1.f, 1.f, 1.f);
+	const glm::vec4 black(0.f, 0.f, 0.f, 1.f);
+	int tileWidth = texture_width / xDim;
+	int tileHeight = texture_height / yDim;
+	for (int y = 0; y < texture_height; y++) {
+		for (int x = 0; x < texture_width; x++) {
+			checkerBoard[x * texture_width + y] = (x & tileWidth) ^ (y & tileHeight) ? white : black;
+		}
+	}
+	return checkerBoard;
 }

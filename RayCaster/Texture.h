@@ -8,12 +8,12 @@ class Texture {
 public:
 	Texture();
 
-	Texture(int width, int height, std::vector<glm::vec4>& pixelBuffer);
+	Texture(int width, int height, std::vector<glm::vec4> pixelBuffer);
 
 	glm::vec4 sample(int x, int y);
+	std::vector<glm::vec4> m_pixelBuffer;
 private:
 	int m_Width, m_Height;
-	std::vector<glm::vec4> m_pixelBuffer;
 };
 
 #endif
