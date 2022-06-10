@@ -13,7 +13,7 @@
 
 float rayScale = 10.0f;
 constexpr float fov = 60; // degrees
-float PI = 3.14159265359f;
+constexpr float PI = 3.14159265359f;
 float DEG = 0.0174532925f / rayScale;
 
 int bufferWidth = fov * rayScale, bufferHeight = 0.75f * bufferWidth;
@@ -30,7 +30,7 @@ int texture_width = 64;
 int texture_height = 64;
 
 float t = 0, dt = 0;
-float player_speed = 1.f;
+float player_speed = 1.5f;
 glm::vec2 playerPosition = glm::vec2(3.5, 5.5);
 glm::vec2 playerPositionDelta = glm::vec2(0, 0);
 float player_angle = PI/2 + 0.00001f;
@@ -58,6 +58,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 float limitAngle(float rad);
+float degToRad(float deg);
 
 std::vector<glm::vec4> genCheckerBoardTexture(int xDim, int yDim);
 
@@ -105,11 +106,11 @@ int main() {
 	//drawer = PrimitiveDrawer();
 	//drawer.init();
 
-	textures.resize(2);
-	//textures[0] = Texture(texture_width, texture_height, "xd1.png");
-	//textures[1] = Texture(texture_width, texture_height, "xd2.png");
+	textures.resize(3);
 	textures[0] = Texture(texture_width, texture_height, "blue-wall.png");
 	textures[1] = Texture(texture_width, texture_height, "red-wall.png");
+	//textures[2] = Texture(texture_width, texture_height, "floor.png");
+	textures[2] = Texture(texture_width, texture_height, "xd1.png");
 
 	float lastFrameTime = 0;
 	float lastTitleUpdate = 0; 
@@ -205,13 +206,18 @@ void processInput(GLFWwindow* window) {
 	int jNow = (int)playerPosition.x;
 	int iNext = (int)nextPosition.y;
 	int jNext = (int)nextPosition.x;
+
+	float sprintMultiplier = 1.f;
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		sprintMultiplier = 2.f;
+
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		nextPosition += playerPositionDelta * player_speed * dt;
+		nextPosition += playerPositionDelta * player_speed * sprintMultiplier * dt;
 		iNext = (int)(nextPosition.y + (playerPositionDelta.y * collisionDistance));
 		jNext = (int)(nextPosition.x + (playerPositionDelta.x * collisionDistance));
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		nextPosition -= playerPositionDelta * player_speed * dt;
+		nextPosition -= playerPositionDelta * player_speed * sprintMultiplier * dt;
 		iNext = (int)(nextPosition.y - (playerPositionDelta.y * collisionDistance));
 		jNext = (int)(nextPosition.x - (playerPositionDelta.x * collisionDistance));
 	}
@@ -384,7 +390,8 @@ void drawRays2D3D() {
 		glm::vec4 wallColor(0.0f, 0.0f, 0.0f, 1.f);
 
 		// Draw the wall
-		for (int y = 0; y < lineHeight; y++) {
+		int y;
+		for (y = 0; y < lineHeight; y++) {
 			// Color
 			int correctedY = textureY * texture_height;
 
@@ -407,15 +414,33 @@ void drawRays2D3D() {
 				wallColor *= 0.6;
 
 			// Fading
-			wallColor *= (1 - (finalDistance / maxDepth) * 0.25f);
+			wallColor *= (1 - (finalDistance / maxDepth) * 0.5f);
 			screenBuffer.setPixel(wallColor, lineStart.x, lineStart.y + y);
 
 			textureY += textureYStep;
 		}
 
+		// Draw the floor
+		for(y = lineOffset + lineHeight; y < bufferHeight; y++) {
+			float dy = y - (bufferHeight / 2.f);
+			float deg = rayAngle;
+			float dist = (bufferWidth / 2.f) / (tanf(degToRad(fov/2.f)));
+			float raFix = cosf(limitAngle(rayAngle - player_angle));
+			float tx = playerPosition.x/2.f + cosf(deg) * dist / dy / raFix;
+			float ty = playerPosition.y/2.f - sinf(deg) * dist / dy / raFix;
+
+			glm::vec4 floorColor = textures[2].sample(tx * texture_width, ty * texture_width);
+
+			screenBuffer.setPixel(floorColor, lineStart.x, y);
+		}
+
 		rayAngle -= DEG;
 		rayAngle = limitAngle(rayAngle);
 	}
+}
+
+float degToRad(float deg) {
+	return deg / (180.f / PI);
 }
 
 float limitAngle(float rad) {

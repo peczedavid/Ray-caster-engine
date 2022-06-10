@@ -23,9 +23,6 @@ Texture::Texture(int width, int height, const char* filename) {
 
 	m_pixelBuffer.resize(m_Width * m_Height);
 
-	printf("%dx%d\n", m_Width, m_Height);
-	printf("numColCh=%d\n", numColCh);
-
 	unsigned bytePerPixel = numColCh;
 
 	for (int y = 0; y < m_Height; y++) {
@@ -43,8 +40,8 @@ Texture::Texture(int width, int height, const char* filename) {
 }
 
 glm::vec4 Texture::sample(int x, int y) {
-	if (x < 0 || x >= m_Width) return glm::vec4(0.f, 0.f, 0.f, 0.f);
-	if (y < 0 || y >= m_Height) return glm::vec4(0.f, 0.f, 0.f, 0.f);
+	if (x < 0 || x >= m_Width) return glm::vec4(0.f, 0.f, 0.f, 1.f);
+	if (y < 0 || y >= m_Height) return glm::vec4(0.f, 0.f, 0.f, 1.f);
 
 	return m_pixelBuffer[y * m_Width + x];
 }
